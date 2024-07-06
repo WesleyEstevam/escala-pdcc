@@ -1,4 +1,5 @@
 import { Container, Grid, TextField, InputLabel, Button } from "@mui/material";
+import ShareIcon from "@mui/icons-material/Share";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { baseURL } from "../../api/api";
@@ -10,14 +11,16 @@ export const InfoEscalas = () => {
   const data = router.query.data ? JSON.parse(router.query.data) : null;
 
   useEffect(() => {
-    axios
-      .get(baseURL + "escalas/" + data)
-      .then((response) => {
-        setEscala(response.data);
-      })
-      .catch((error) => {
-        console.log("Ops, deu erro na listagem do id" + error);
-      });
+    if (data) {
+      axios
+        .get(baseURL + "escalas/" + data)
+        .then((response) => {
+          setEscala(response.data);
+        })
+        .catch((error) => {
+          console.log("Ops, deu erro na listagem do id" + error);
+        });
+    }
   }, [data]);
 
   const handleChange = (event) => {
@@ -32,30 +35,89 @@ export const InfoEscalas = () => {
     router.push("/escalas");
   };
 
+  const generateScheduleText = (escala) => {
+    let text = `ARQUIDIOCESE DE FORTALEZA PARÓQUIA DE SÃO JOSÉ \n\n`;
+    text += `${escala.tipo_cerimonia}\n\n`;
+    text += `Escala do dia: ${formatarDataBrasileira(escala.data_escala)}\n\n`;
+    text += `${escala.capela.nome_capela} - ${escala.horario_missa}\n\n`;
+
+    escala.coroinhas.forEach((coroinha) => {
+      text += `${coroinha.objetoLiturgico.nome_objeto}: `;
+      text += `${coroinha.coroinha.nome_coroinha}\n`;
+    });
+
+    return text;
+  };
+
+  const copyToClipboard = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("Copy");
+    document.body.removeChild(textArea);
+  };
+
+  const share = () => {
+    if (!escala) return;
+
+    const scheduleText = generateScheduleText(escala);
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: "ARQUIDIOCESE DE FORTALEZA PARÓQUIA DE SÃO JOSÉ ",
+          text: scheduleText,
+        })
+        .then(() => {
+          console.log("Escala compartilhada com sucesso!");
+        })
+        .catch((error) => {
+          console.error("Erro ao compartilhar a escala:", error);
+        });
+    } else {
+      copyToClipboard(scheduleText);
+      alert("Escala copiada para a área de transferência!");
+    }
+  };
+
   if (!escala) return null;
 
   const formatarDataBrasileira = (dataString) => {
     const data = new Date(dataString);
     const dia = String(data.getUTCDate()).padStart(2, "0");
-    const mes = String(data.getUTCMonth() + 1).padStart(2, "0"); // Janeiro é 0!
+    const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
     const ano = data.getUTCFullYear();
     return `${dia}/${mes}/${ano}`;
   };
 
   return (
     <Container>
-      <div
+      <Grid
+        container
+        spacing={2}
+        mt={3}
         style={{
-          margin: 20,
+          margin: 10,
           display: "flex",
           justifyContent: "space-between",
         }}
       >
         <h1>Escala do dia: {formatarDataBrasileira(escala.data_escala)}</h1>
-        <Button variant="contained" onClick={handleBack}>
-          Voltar
-        </Button>
-      </div>
+        <Grid>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={share}
+            style={{ margin: 4 }}
+          >
+            <ShareIcon />
+          </Button>
+          <Button variant="contained" onClick={handleBack}>
+            Voltar
+          </Button>
+        </Grid>
+      </Grid>
       <Grid container spacing={2} mt={3}>
         <Grid item xs={12} sm={6}>
           <TextField
