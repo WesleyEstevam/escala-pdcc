@@ -1,20 +1,8 @@
 import { useRef, useState } from "react";
 import PropTypes from "prop-types";
 import styled from "@emotion/styled";
-import {
-  AppBar,
-  Avatar,
-  Badge,
-  Box,
-  Button,
-  IconButton,
-  Toolbar,
-  Tooltip,
-} from "@mui/material";
+import { AppBar, Box, IconButton, Toolbar } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Bell as BellIcon } from "../icons/bell";
-import { UserCircle as UserCircleIcon } from "../icons/user-circle";
-import { Users as UsersIcon } from "../icons/users";
 import { AccountPopover } from "./account-popover";
 
 const DashboardNavbarRoot = styled(AppBar)(({ theme }) => ({

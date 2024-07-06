@@ -1,27 +1,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import {
-  Box,
-  Button,
-  Divider,
-  Drawer,
-  Typography,
-  useMediaQuery,
-} from "@mui/material";
+import { Box, Divider, Drawer, useMediaQuery } from "@mui/material";
 import { ChartBar as ChartBarIcon } from "../icons/chart-bar";
 import { Users as UsersIcon } from "../icons/users";
 import { NavItem } from "./nav-item";
 import NextLink from "next/link";
 import PropTypes from "prop-types";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import HandymanIcon from "@mui/icons-material/Handyman";
-import CampaignIcon from "@mui/icons-material/Campaign";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import HomeIcon from "@mui/icons-material/Home";
-import SecurityIcon from "@mui/icons-material/Security";
-import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
-import TimeToLeaveIcon from "@mui/icons-material/TimeToLeave";
-import ApartmentIcon from "@mui/icons-material/Apartment";
+import HotelIcon from "@mui/icons-material/Hotel";
 import InsertChartIcon from "@mui/icons-material/InsertChartOutlined";
 
 const items = [
@@ -32,7 +17,7 @@ const items = [
   },
   {
     href: "/despensas",
-    icon: <HomeIcon fontSize="small" />,
+    icon: <HotelIcon fontSize="small" />,
     title: "Despensas",
   },
   {
