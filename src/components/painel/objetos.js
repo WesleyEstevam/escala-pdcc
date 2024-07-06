@@ -1,5 +1,5 @@
 import { Avatar, Card, CardContent, Grid, Typography } from "@mui/material";
-import InsertChartIcon from "@mui/icons-material/InsertChartOutlined";
+import HandymanIcon from "@mui/icons-material/Handyman";
 import { useEffect, useState } from "react";
 import { baseURL } from "../api/api";
 import axios from "axios";
@@ -38,7 +38,7 @@ export const Objetos = (props) => {
                 width: 56,
               }}
             >
-              <InsertChartIcon />
+              <HandymanIcon />
             </Avatar>
           </Grid>
         </Grid>

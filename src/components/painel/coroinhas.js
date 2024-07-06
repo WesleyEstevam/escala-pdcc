@@ -66,7 +66,7 @@ export const Coroinhas = (props) => {
             variant="body2"
           ></Typography>
           <Typography color="textSecondary" variant="caption">
-            Total de imóveis
+            Total de coroinhas
           </Typography>
         </Box>
       </CardContent>

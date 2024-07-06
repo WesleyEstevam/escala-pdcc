@@ -7,10 +7,10 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import InsertChartIcon from "@mui/icons-material/InsertChartOutlined";
 import { baseURL } from "../api/api";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import HomeIcon from "@mui/icons-material/Home";
 
 export const Escalas = (props) => {
   const [escalas, setEscalas] = useState([]);
@@ -46,7 +46,7 @@ export const Escalas = (props) => {
                 width: 56,
               }}
             >
-              <HomeIcon />
+              <InsertChartIcon />
             </Avatar>
           </Grid>
         </Grid>
@@ -65,7 +65,7 @@ export const Escalas = (props) => {
             }}
           ></Typography>
           <Typography color="textSecondary" variant="caption">
-            Total de moradores
+            Total de escalas
           </Typography>
         </Box>
       </CardContent>
