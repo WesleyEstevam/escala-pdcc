@@ -56,7 +56,7 @@ export const HeaderCoroinhas = (props) => {
         <Box sx={{ m: 1, display: "flex" }}>
           <Link href="/cadastros/novo-coroinha" color="primary">
             <Button color="primary" variant="contained">
-              Nova Coroinha
+              Novo Coroinha
             </Button>
           </Link>
         </Box>
