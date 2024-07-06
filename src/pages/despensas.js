@@ -1,8 +1,6 @@
 import { Box, Container } from "@mui/material";
 import { DashboardLayout } from "../components/painel-layout";
-import { customers } from "../__mocks__/customers";
 import { Despensas } from "../components/despensas/header";
-import { ListaDespensas } from "../components/despensas/listagem-despensas";
 
 const Page = () => (
   <>
