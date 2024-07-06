@@ -1,5 +1,4 @@
 import { Box, Container } from "@mui/material";
-import { ListagemCoroinhas } from "../components/coroinhas/listagem-coroinhas";
 import { HeaderCoroinhas } from "../components/coroinhas/header-coroinhas";
 import { DashboardLayout } from "../components/painel-layout";
 
