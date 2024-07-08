@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { baseURL } from "../../api/api";
 import axios from "axios";
-
+import { alertaCopy, alertaEdicao } from "../alertas";
 export const InfoEscalas = () => {
   const [escala, setEscala] = useState(null);
   const router = useRouter();
@@ -77,7 +77,7 @@ export const InfoEscalas = () => {
         });
     } else {
       copyToClipboard(scheduleText);
-      alert("Escala copiada para a área de transferência!");
+      alertaCopy();
     }
   };
 
@@ -172,12 +172,12 @@ export const InfoEscalas = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <InputLabel>Objeto Litúrgico</InputLabel>
+              <InputLabel>Função</InputLabel>
               <TextField
                 fullWidth
                 disabled
                 value={coroinha.objetoLiturgico.nome_objeto}
-                placeholder="Objeto Litúrgico"
+                placeholder="Função"
               />
             </Grid>
           </Grid>

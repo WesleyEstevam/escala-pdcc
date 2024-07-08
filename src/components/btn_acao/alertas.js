@@ -12,6 +12,24 @@ export function alertaEdicao() {
   Swal.fire("Bom trabalho!", "Escala atualizada com sucesso!", "success");
 }
 
+export function alertaCopy() {
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "bottom-end",
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.onmouseenter = Swal.stopTimer;
+      toast.onmouseleave = Swal.resumeTimer;
+    },
+  });
+  Toast.fire({
+    icon: "success",
+    title: "Escala copiada com sucesso!",
+  });
+}
+
 export function erroLogin() {
   const Toast = Swal.mixin({
     toast: true,
