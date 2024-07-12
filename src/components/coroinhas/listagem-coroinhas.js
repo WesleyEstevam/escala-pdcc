@@ -21,7 +21,6 @@ import { useRouter } from "next/router";
 
 export const ListagemCoroinhas = ({ coroinhas }) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
-  const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
   const [coroinha, setCoroinha] = useState([]);
   const [allCoroinhas, setAllCoroinhas] = useState([]);
@@ -151,7 +150,7 @@ export const ListagemCoroinhas = ({ coroinhas }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {allCoroinhas.slice(0, limit).map((coroinha) => (
+              {allCoroinhas.slice(0).map((coroinha) => (
                 <TableRow
                   hover
                   key={coroinha.id}
@@ -170,7 +169,7 @@ export const ListagemCoroinhas = ({ coroinhas }) => {
                     </Box>
                   </TableCell>
                   <TableCell>{coroinha.sexo_coroinha}</TableCell>
-                  <TableCell>{` ${coroinha.altura_coroinha}`}</TableCell>
+                  <TableCell>{coroinha.altura_coroinha.toFixed(2)}m</TableCell>
                   <TableCell>{coroinha.tipo_coroinha}</TableCell>
                   <TableCell
                     sx={{
@@ -204,15 +203,6 @@ export const ListagemCoroinhas = ({ coroinhas }) => {
           </Table>
         </Box>
       </ImageList>
-      <TablePagination
-        component="div"
-        count={allCoroinhas.length}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleLimitChange}
-        page={page}
-        rowsPerPage={limit}
-        rowsPerPageOptions={[5, 10, 25]}
-      />
     </Card>
   );
 };

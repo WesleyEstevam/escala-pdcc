@@ -20,7 +20,6 @@ import { baseURL } from "../api/api";
 
 export const ListaDespensas = ({ coroinhas }) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
-  const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
   const [allCoroinhas, setAllCoroinhas] = useState([]);
   const router = useRouter();
@@ -88,7 +87,7 @@ export const ListaDespensas = ({ coroinhas }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {allCoroinhas.slice(0, limit).map((coroinha) => (
+              {allCoroinhas.slice(0).map((coroinha) => (
                 <TableRow
                   hover
                   key={coroinha.id_coroinha}
@@ -137,15 +136,6 @@ export const ListaDespensas = ({ coroinhas }) => {
           </Table>
         </Box>
       </ImageList>
-      <TablePagination
-        component="div"
-        count={allCoroinhas.length}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleLimitChange}
-        page={page}
-        rowsPerPage={limit}
-        rowsPerPageOptions={[5, 10, 25]}
-      />
     </Card>
   );
 };

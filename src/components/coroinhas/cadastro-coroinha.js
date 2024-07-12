@@ -17,7 +17,7 @@ import { alertaCadastro } from "../btn_acao/alertas";
 export const NovoCoroinha = () => {
   const [values, setValues] = useState({
     nome_coroinha: "",
-    altura_coroinha: "",
+    altura_coroinha: 0,
     sexo_coroinha: "",
     tipo_coroinha: "",
   });
@@ -71,7 +71,7 @@ export const NovoCoroinha = () => {
                 fullWidth
                 label="Altura"
                 name="altura_coroinha"
-                type="number" // Ensure the input only accepts numeric values
+                type="number"
                 onChange={handleChange}
                 required
                 value={values.altura_coroinha}
@@ -80,21 +80,25 @@ export const NovoCoroinha = () => {
             </Grid>
 
             <Grid item md={6} xs={12}>
-              <TextField
+              <InputLabel>Tipo</InputLabel>
+              <Select
                 fullWidth
-                label="Sexo"
                 name="sexo_coroinha"
                 onChange={handleChange}
                 required
                 value={values.sexo_coroinha}
                 variant="outlined"
-              />
+              >
+                <MenuItem value="Masculino">Masculino</MenuItem>
+                <MenuItem value="Feminino">Feminino</MenuItem>
+              </Select>
             </Grid>
             <Grid item md={6} xs={12}>
               <InputLabel>Tipo</InputLabel>
               <Select
                 fullWidth
-                name="tipo_coroinha" // Added the name attribute
+                required
+                name="tipo_coroinha"
                 value={values.tipo_coroinha}
                 onChange={handleChange}
                 variant="outlined"

@@ -21,7 +21,6 @@ import { baseURL } from "../api/api";
 
 export const Escalas = () => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
-  const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(0);
   const [escalas, setEscalas] = useState([]);
   const router = useRouter();
@@ -140,7 +139,7 @@ export const Escalas = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {escalas.slice(0, limit).map((escala) => (
+              {escalas.slice(0).map((escala) => (
                 <TableRow
                   hover
                   key={escala.id_escala}
@@ -178,15 +177,6 @@ export const Escalas = () => {
           </Table>
         </Box>
       </ImageList>
-      <TablePagination
-        component="div"
-        count={escalas.length}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleLimitChange}
-        page={page}
-        rowsPerPage={limit}
-        rowsPerPageOptions={[5, 10, 25]}
-      />
     </Card>
   );
 };
