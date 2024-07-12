@@ -6,7 +6,6 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import InsertChartIcon from "@mui/icons-material/InsertChartOutlined";
 import { baseURL } from "../api/api";
 import { useState, useEffect } from "react";
@@ -57,7 +56,6 @@ export const Escalas = (props) => {
             pt: 2,
           }}
         >
-          <ArrowUpwardIcon color="success" />
           <Typography
             variant="body2"
             sx={{

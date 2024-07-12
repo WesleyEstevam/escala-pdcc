@@ -6,7 +6,6 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import PeopleIcon from "@mui/icons-material/PeopleOutlined";
 import { useEffect, useState } from "react";
 import { baseURL } from "../api/api";
@@ -57,7 +56,6 @@ export const Coroinhas = (props) => {
             alignItems: "center",
           }}
         >
-          <ArrowUpwardIcon color="success" />
           <Typography
             color="error"
             sx={{
