@@ -1,6 +1,6 @@
 import { DashboardLayout } from "../components/painel-layout";
 import { Box, Container, Grid } from "@mui/material";
-import { Grafico } from "../components/painel/grafico";
+import { Calendario } from "../components/painel/calendario";
 import { Escalas } from "../components/painel/escalas";
 import { Capelas } from "../components/painel/capelas";
 import { Objetos } from "../components/painel/objetos";
@@ -29,10 +29,9 @@ const Page = () => (
           <Grid item xl={3} lg={3} sm={6} xs={12}>
             <Capelas sx={{ height: "100%" }} />
           </Grid>
-          <Grid item lg={8} md={12} xl={9} xs={12}>
-            <Grafico />
+          <Grid item lg={8} md={12} xl={12} xs={12}>
+            <Calendario />
           </Grid>
-          <Grid item lg={4} md={6} xl={3} xs={12}></Grid>
         </Grid>
       </Container>
     </Box>

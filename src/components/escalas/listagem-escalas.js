@@ -2,12 +2,10 @@ import {
   Box,
   Card,
   Button,
-  Checkbox,
   Table,
   TableBody,
   TableCell,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
 } from "@mui/material";
