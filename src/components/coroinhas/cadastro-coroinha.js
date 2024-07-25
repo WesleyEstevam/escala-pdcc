@@ -80,7 +80,7 @@ export const NovoCoroinha = () => {
             </Grid>
 
             <Grid item md={6} xs={12}>
-              <InputLabel>Tipo</InputLabel>
+              <InputLabel>Sexo</InputLabel>
               <Select
                 fullWidth
                 name="sexo_coroinha"
