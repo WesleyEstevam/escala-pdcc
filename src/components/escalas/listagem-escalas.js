@@ -7,35 +7,71 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Typography,
 } from "@mui/material";
-import axios from "axios";
 import ImageList from "@mui/material/ImageList";
 import InfoIcon from "@mui/icons-material/Info";
 import { DeletarItem } from "../btn_acao/btn-delet";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { baseURL } from "../api/api";
+import { db } from "../../firebase/firebase";
+import {
+  collection,
+  getDocs,
+  getDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 export const Escalas = () => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
-  const [page, setPage] = useState(0);
   const [escalas, setEscalas] = useState([]);
   const router = useRouter();
 
   // LISTAGEM DE ESCALAS
   useEffect(() => {
-    axios
-      .get(baseURL + "escalas")
-      .then((response) => {
-        setEscalas(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    const fetchEscalas = async () => {
+      try {
+        const escalasRef = collection(db, "escalas");
+        const querySnapshot = await getDocs(escalasRef);
+
+        const escalasData = await Promise.all(
+          querySnapshot.docs.map(async (doc) => {
+            const escalaData = doc.data();
+            const capelaRef = escalaData.id_capela;
+
+            // Convertendo a data_escala para Date, se necessário
+            const dataEscala =
+              escalaData.data_escala instanceof Date
+                ? escalaData.data_escala
+                : new Date(escalaData.data_escala);
+
+            let nomeCapela = "Capela não encontrada";
+
+            // Verificando se a referência da capela é válida
+            if (capelaRef && capelaRef.id) {
+              const capelaDoc = await getDoc(capelaRef);
+              if (capelaDoc.exists()) {
+                nomeCapela = capelaDoc.data().nome_capela;
+              }
+            }
+
+            return {
+              id_escala: doc.id,
+              nome_capela: nomeCapela,
+              data_escala: dataEscala,
+              ...escalaData,
+            };
+          })
+        );
+
+        setEscalas(escalasData);
+      } catch (error) {
+        console.error("Erro ao buscar escalas:", error);
+      }
+    };
+    fetchEscalas();
   }, []);
 
-  // LISTAGEM DE ESCALAS POR ID
   async function handleFindOne(tipoPessoa) {
     try {
       router.push(
@@ -48,71 +84,39 @@ export const Escalas = () => {
     }
   }
 
-  // EXCLUSÃO DE ESCALAS
-  async function handleDelete(item) {
-    console.log(item);
+  async function handleDelete(itemId) {
     try {
-      await axios.delete(baseURL + "escalas/" + `${item}`).then(() => {
-        const novaLista = escalas.filter((escala) => escala.id_escala !== item);
-        setEscalas(novaLista);
-      });
+      // Referência ao documento a ser deletado
+      const escalaRef = doc(db, "escalas", itemId);
+
+      // Deletar o documento no Firestore
+      await deleteDoc(escalaRef);
+
+      // Atualizar a lista de escalas após a exclusão
+      const novaLista = escalas.filter((escala) => escala.id_escala !== itemId);
+      setEscalas(novaLista);
     } catch (error) {
       console.error("ops, erro ao deletar " + error);
     }
   }
 
-  const handleSelectAll = (event) => {
-    let newSelectedCustomerIds;
+  const formatarDataBrasileira = (data) => {
+    let dataObj;
 
-    if (event.target.checked) {
-      newSelectedCustomerIds = escalas.map((escalas) => escalas.id);
+    // Verifica se 'data' é um objeto Date; se não for, tenta convertê-lo
+    if (data instanceof Date) {
+      dataObj = data;
+    } else if (typeof data?.toDate === "function") {
+      dataObj = data.toDate(); // Para Timestamp do Firestore
+    } else if (typeof data === "string" || typeof data === "number") {
+      dataObj = new Date(data); // Para strings ou números de timestamp
     } else {
-      newSelectedCustomerIds = [];
+      return "Data inválida"; // Retorna uma mensagem de erro se o formato for inesperado
     }
 
-    setSelectedCustomerIds(newSelectedCustomerIds);
-  };
-
-  const handleSelectOne = (event, id) => {
-    const selectedIndex = selectedCustomerIds.indexOf(id);
-    let newSelectedCustomerIds = escalas;
-
-    if (selectedIndex === -1) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(
-        selectedCustomerIds,
-        id
-      );
-    } else if (selectedIndex === 0) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(
-        selectedCustomerIds.slice(1)
-      );
-    } else if (selectedIndex === selectedCustomerIds.length - 1) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(
-        selectedCustomerIds.slice(0, -1)
-      );
-    } else if (selectedIndex > 0) {
-      newSelectedCustomerIds = newSelectedCustomerIds.concat(
-        selectedCustomerIds.slice(0, selectedIndex),
-        selectedCustomerIds.slice(selectedIndex + 1)
-      );
-    }
-
-    setSelectedCustomerIds(newSelectedCustomerIds);
-  };
-
-  const handleLimitChange = (event) => {
-    setLimit(event.target.value);
-  };
-
-  const handlePageChange = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const formatarDataBrasileira = (dataString) => {
-    const data = new Date(dataString);
-    const dia = String(data.getUTCDate()).padStart(2, "0");
-    const mes = String(data.getUTCMonth() + 1).padStart(2, "0"); // Janeiro é 0!
-    const ano = data.getUTCFullYear();
+    const dia = String(dataObj.getUTCDate()).padStart(2, "0");
+    const mes = String(dataObj.getUTCMonth() + 1).padStart(2, "0");
+    const ano = dataObj.getUTCFullYear();
     return `${dia}/${mes}/${ano}`;
   };
 
@@ -143,7 +147,7 @@ export const Escalas = () => {
                   key={escala.id_escala}
                   selected={selectedCustomerIds.indexOf(escala.id) !== -1}
                 >
-                  <TableCell>{escala.capela.nome_capela}</TableCell>
+                  <TableCell>{escala.nome_capela}</TableCell>
                   <TableCell>{escala.horario_missa}</TableCell>
                   <TableCell>{escala.tipo_cerimonia}</TableCell>
                   <TableCell>

@@ -6,18 +6,17 @@ import {
   TableBody,
   TableCell,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
 } from "@mui/material";
-import axios from "axios";
 import EditIcon from "@mui/icons-material/Edit";
 import InfoIcon from "@mui/icons-material/Info";
 import ImageList from "@mui/material/ImageList";
 import { DeletarItem } from "../btn_acao/btn-delet";
 import { useEffect, useState } from "react";
-import { baseURL } from "../api/api";
 import { useRouter } from "next/router";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
 
 export const ListagemCoroinhas = ({ coroinhas }) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
@@ -27,14 +26,18 @@ export const ListagemCoroinhas = ({ coroinhas }) => {
   const router = useRouter();
 
   // EXCLUSÃO DE COROINHAS
-  async function handleDelete(idPessoa) {
+  async function handleDelete(id_coroinha) {
     try {
-      await axios.delete(baseURL + "coroinhas/" + `${idPessoa}`).then(() => {
-        const novaLista = coroinha.filter(
-          (coroinhas) => coroinhas.id_coroinha !== idPessoa
-        );
-        setCoroinha(novaLista);
-      });
+      // Cria a referência ao documento que será deletado
+      const docRef = doc(db, "coroinhas", id_coroinha);
+      await deleteDoc(docRef);
+
+      const querySnapshot = await getDocs(collection(db, "coroinhas"));
+      const coroinhasData = querySnapshot.docs.map((doc) => ({
+        id_coroinha: doc.id,
+        ...doc.data(),
+      }));
+      setAllCoroinhas(coroinhasData);
     } catch (error) {
       console.error("ops, erro ao deletar " + error);
     }
@@ -68,15 +71,21 @@ export const ListagemCoroinhas = ({ coroinhas }) => {
 
   // LISTAGEM DE COROINHAS
   useEffect(() => {
+    const fetchCoroinhas = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "coroinhas"));
+        const coroinhasData = querySnapshot.docs.map((doc) => ({
+          id_coroinha: doc.id,
+          ...doc.data(),
+        }));
+        setAllCoroinhas(coroinhasData);
+      } catch (error) {
+        console.error("ops, erro ao buscar coroinhas " + error);
+      }
+    };
+
     if (!coroinhas) {
-      axios
-        .get(baseURL + "coroinhas")
-        .then((response) => {
-          setAllCoroinhas(response.data);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+      fetchCoroinhas();
     } else {
       setAllCoroinhas(coroinhas);
     }
@@ -169,7 +178,7 @@ export const ListagemCoroinhas = ({ coroinhas }) => {
                     </Box>
                   </TableCell>
                   <TableCell>{coroinha.sexo_coroinha}</TableCell>
-                  <TableCell>{coroinha.altura_coroinha.toFixed(2)}m</TableCell>
+                  <TableCell>{coroinha.altura_coroinha}m</TableCell>
                   <TableCell>{coroinha.tipo_coroinha}</TableCell>
                   <TableCell
                     sx={{

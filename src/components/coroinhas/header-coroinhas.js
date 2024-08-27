@@ -5,15 +5,14 @@ import {
   Card,
   CardContent,
   TextField,
-  InputAdornment,
-  SvgIcon,
   Typography,
 } from "@mui/material";
 import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
-import axios from "axios";
-import { baseURL } from "../api/api";
 import { ListagemCoroinhas } from "./listagem-coroinhas";
 import Link from "next/link";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
+
 export const HeaderCoroinhas = (props) => {
   const [searchValue, setSearchValue] = useState("");
   const [searchResult, setSearchResult] = useState(null);
@@ -22,14 +21,24 @@ export const HeaderCoroinhas = (props) => {
     setSearchValue(event.target.value);
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (searchTerm) => {
     try {
-      const response = await axios.get(
-        `${baseURL}coroinhas/nome/${searchValue}`
+      const q = query(
+        collection(db, "coroinhas"),
+        where("nome_coroinha", ">=", searchTerm),
+        where("nome_coroinha", "<=", searchTerm + "\uf8ff")
       );
-      setSearchResult([response.data]); // Definir resultados da pesquisa como array para ListagemCoroinhas
+
+      const querySnapshot = await getDocs(q);
+
+      const coroinhasData = querySnapshot.docs.map((doc) => ({
+        id_coroinha: doc.id,
+        ...doc.data(),
+      }));
+
+      setSearchResult(coroinhasData); // Definir resultados da pesquisa como array para ListagemCoroinhas
     } catch (error) {
-      console.error("Erro ao buscar coroinha:", error);
+      console.error("Erro ao buscar coroinhas:", error);
       setSearchResult([]); // Definir array vazio em caso de erro
     }
   };
@@ -84,7 +93,7 @@ export const HeaderCoroinhas = (props) => {
                 }}
                 color="success"
                 variant="contained"
-                onClick={handleSearch}
+                onClick={() => handleSearch(searchValue)} // Passa searchValue para handleSearch
                 startIcon={<SearchIcon />} // Ícone de lupa
               >
                 Pesquisar

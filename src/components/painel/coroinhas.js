@@ -8,21 +8,24 @@ import {
 } from "@mui/material";
 import PeopleIcon from "@mui/icons-material/PeopleOutlined";
 import { useEffect, useState } from "react";
-import { baseURL } from "../api/api";
-import axios from "axios";
+import { db } from "../../firebase/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 export const Coroinhas = (props) => {
-  const [coroinha, setCoroinha] = useState([]);
+  const [coroinhas, setCoroinhas] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(baseURL + "coroinhas")
-      .then((response) => {
-        setCoroinha(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    const fetchCoroinhas = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "coroinhas"));
+        const coroinhasList = querySnapshot.docs.map((doc) => doc.data());
+        setCoroinhas(coroinhasList);
+      } catch (error) {
+        console.error("Erro ao buscar coroinhas:", error);
+      }
+    };
+
+    fetchCoroinhas();
   }, []);
 
   return (
@@ -34,7 +37,7 @@ export const Coroinhas = (props) => {
               Coroinhas
             </Typography>
             <Typography color="textPrimary" variant="h4">
-              {coroinha.length}
+              {coroinhas.length}
             </Typography>
           </Grid>
           <Grid item>

@@ -7,22 +7,25 @@ import {
   Typography,
 } from "@mui/material";
 import InsertChartIcon from "@mui/icons-material/InsertChartOutlined";
-import { baseURL } from "../api/api";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
 
 export const Escalas = (props) => {
   const [escalas, setEscalas] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(baseURL + "escalas")
-      .then((response) => {
-        setEscalas(response.data);
-      })
-      .catch((error) => {
-        console.log("ops! Erro na consulta " + error);
-      });
+    const fetchEscalas = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "escalas"));
+        const escalasData = querySnapshot.docs.map((doc) => doc.data());
+        setEscalas(escalasData);
+      } catch (error) {
+        console.log("Ops! Erro na consulta: ", error);
+      }
+    };
+
+    fetchEscalas();
   }, []);
 
   return (

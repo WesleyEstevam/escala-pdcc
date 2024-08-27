@@ -1,21 +1,28 @@
 import { Avatar, Card, CardContent, Grid, Typography } from "@mui/material";
-import { baseURL } from "../api/api";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { db } from "../../firebase/firebase"; // Importe o Firestore
+import { collection, getDocs } from "firebase/firestore";
 import HomeIcon from "@mui/icons-material/Home";
 
 export const Capelas = (props) => {
   const [capelas, setCapelas] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(baseURL + "capelas")
-      .then((response) => {
-        setCapelas(response.data);
-      })
-      .catch((error) => {
-        console.log("ops! Erro na consulta " + error);
-      });
+    const fetchCapelas = async () => {
+      try {
+        const capelasRef = collection(db, "capelas"); // Referência à coleção "capelas"
+        const querySnapshot = await getDocs(capelasRef);
+        const capelasData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCapelas(capelasData);
+      } catch (error) {
+        console.log("Ops! Erro na consulta: " + error);
+      }
+    };
+
+    fetchCapelas();
   }, []);
 
   return (

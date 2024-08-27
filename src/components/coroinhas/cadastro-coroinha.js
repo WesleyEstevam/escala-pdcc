@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { baseURL } from "../api/api";
 import {
   Box,
   Button,
@@ -12,34 +11,37 @@ import {
   Select,
   TextField,
 } from "@mui/material";
-import axios from "axios";
 import { alertaCadastro } from "../btn_acao/alertas";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../../firebase/firebase";
+
 export const NovoCoroinha = () => {
   const [values, setValues] = useState({
     nome_coroinha: "",
     altura_coroinha: 0,
     sexo_coroinha: "",
     tipo_coroinha: "",
+    status: "ativo",
   });
 
   const router = useRouter();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
     const data = {
       ...values,
-      altura_coroinha: parseFloat(values.altura_coroinha),
+      altura_coroinha: parseFloat(values.altura_coroinha).toFixed(2),
     };
 
-    axios
-      .post(baseURL + "coroinhas", data)
-      .then(() => {
-        router.push("/coroinhas");
-        alertaCadastro();
-      })
-      .catch((error) => {
-        console.error("ops! ocorreu um erro " + error);
-      });
+    try {
+      // Adiciona o documento na coleção "coroinhas"
+      await addDoc(collection(db, "coroinhas"), data);
+      router.push("/coroinhas");
+      alertaCadastro();
+    } catch (error) {
+      console.error("ops! ocorreu um erro " + error);
+    }
   };
 
   const handleChange = (event) => {

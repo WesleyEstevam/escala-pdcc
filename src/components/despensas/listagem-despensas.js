@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import HotelIcon from "@mui/icons-material/Hotel";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import ImageList from "@mui/material/ImageList";
-import axios from "axios";
+import { useRouter } from "next/router";
 import {
   Box,
   Card,
@@ -11,12 +11,17 @@ import {
   TableBody,
   TableCell,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
 } from "@mui/material";
-import { useRouter } from "next/router";
-import { baseURL } from "../api/api";
+import {
+  collection,
+  getDocs,
+  updateDoc,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "../../firebase/firebase";
 
 export const ListaDespensas = ({ coroinhas }) => {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
@@ -26,15 +31,21 @@ export const ListaDespensas = ({ coroinhas }) => {
 
   // LISTAGEM DE coroinhas
   useEffect(() => {
+    const fetchCoroinhas = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "coroinhas"));
+        const coroinhasData = querySnapshot.docs.map((doc) => ({
+          id_coroinha: doc.id,
+          ...doc.data(),
+        }));
+        setAllCoroinhas(coroinhasData);
+      } catch (error) {
+        console.error("ops, erro ao buscar coroinhas " + error);
+      }
+    };
+
     if (!coroinhas) {
-      axios
-        .get(baseURL + "coroinhas")
-        .then((response) => {
-          setAllCoroinhas(response.data);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+      fetchCoroinhas();
     } else {
       setAllCoroinhas(coroinhas);
     }
@@ -42,17 +53,37 @@ export const ListaDespensas = ({ coroinhas }) => {
 
   const dispensarCoroinha = async (id_coroinha) => {
     try {
-      await axios.patch(`${baseURL}coroinhas/${id_coroinha}/dispensar`);
-      setAllCoroinhas((prevCoroinhas) =>
-        prevCoroinhas.map((coroinha) =>
-          coroinha.id_coroinha === id_coroinha
-            ? {
-                ...coroinha,
-                status: coroinha.status === "ativo" ? "dispensado" : "ativo",
-              }
-            : coroinha
-        )
-      );
+      // Referência ao documento do coroinha no Firestore
+      const coroinhaRef = doc(db, "coroinhas", id_coroinha);
+
+      // Obter o documento atual
+      const coroinhaDoc = await getDoc(coroinhaRef);
+
+      if (coroinhaDoc.exists()) {
+        const currentStatus = coroinhaDoc.data().status;
+
+        // Alternar entre "ativo" e "dispensado"
+        const newStatus = currentStatus === "ativo" ? "dispensado" : "ativo";
+
+        // Atualizar o status do coroinha no Firestore
+        await updateDoc(coroinhaRef, {
+          status: newStatus,
+        });
+
+        // Atualizar o estado local
+        setAllCoroinhas((prevCoroinhas) =>
+          prevCoroinhas.map((coroinha) =>
+            coroinha.id_coroinha === id_coroinha
+              ? {
+                  ...coroinha,
+                  status: newStatus,
+                }
+              : coroinha
+          )
+        );
+      } else {
+        console.error("Coroinha não encontrado.");
+      }
     } catch (error) {
       console.error("Erro ao dispensar coroinha:", error);
     }

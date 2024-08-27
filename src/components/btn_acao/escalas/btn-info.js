@@ -2,25 +2,70 @@ import { Container, Grid, TextField, InputLabel, Button } from "@mui/material";
 import ShareIcon from "@mui/icons-material/Share";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { baseURL } from "../../api/api";
-import axios from "axios";
-import { alertaCopy, alertaEdicao } from "../alertas";
+import { doc, getDoc, getDocs, collection } from "firebase/firestore";
+import { db } from "../../../firebase/firebase";
+import { alertaCopy } from "../alertas";
+
 export const InfoEscalas = () => {
   const [escala, setEscala] = useState(null);
   const router = useRouter();
   const data = router.query.data ? JSON.parse(router.query.data) : null;
 
   useEffect(() => {
-    if (data) {
-      axios
-        .get(baseURL + "escalas/" + data)
-        .then((response) => {
-          setEscala(response.data);
-        })
-        .catch((error) => {
-          console.log("Ops, deu erro na listagem do id" + error);
-        });
-    }
+    const fetchEscala = async () => {
+      if (data) {
+        try {
+          const escalaRef = doc(db, "escalas", data);
+          const escalaDoc = await getDoc(escalaRef);
+
+          if (escalaDoc.exists()) {
+            const escalaData = escalaDoc.data();
+
+            // Verifica se existe uma referência de capela
+            if (escalaData.id_capela) {
+              const capelaRef = doc(db, "capelas", escalaData.id_capela.id);
+              const capelaDoc = await getDoc(capelaRef);
+
+              if (capelaDoc.exists()) {
+                const capelaData = capelaDoc.data();
+
+                // Buscar detalhes dos coroinhas e objetos litúrgicos
+                const coroinhaDetails = await Promise.all(
+                  escalaData.coroinhas.map(async (coroinhaRef) => {
+                    const coroinhaDoc = await getDoc(coroinhaRef.id_coroinha);
+                    return coroinhaDoc.exists() ? coroinhaDoc.data() : null;
+                  })
+                );
+
+                const objetoDetails = await Promise.all(
+                  escalaData.coroinhas.map(async (coroinhaRef) => {
+                    const objetoDoc = await getDoc(coroinhaRef.id_objeto);
+                    return objetoDoc.exists() ? objetoDoc.data() : null;
+                  })
+                );
+
+                setEscala({
+                  ...escalaData,
+                  nome_capela: capelaData.nome_capela,
+                  coroinhas: coroinhaDetails.filter(Boolean), // Remove nulos
+                  objetosLiturgicos: objetoDetails.filter(Boolean), // Remove nulos
+                });
+              } else {
+                console.log("Capela não encontrada!");
+              }
+            } else {
+              setEscala(escalaData);
+            }
+          } else {
+            console.log("Documento não encontrado!");
+          }
+        } catch (error) {
+          console.error("Ops, deu erro na listagem do id", error);
+        }
+      }
+    };
+
+    fetchEscala();
   }, [data]);
 
   const handleChange = (event) => {
@@ -39,11 +84,12 @@ export const InfoEscalas = () => {
     let text = `ARQUIDIOCESE DE FORTALEZA PARÓQUIA DE SÃO JOSÉ \n\n`;
     text += `${escala.tipo_cerimonia}\n\n`;
     text += `Escala do dia: ${formatarDataBrasileira(escala.data_escala)}\n\n`;
-    text += `${escala.capela.nome_capela} - ${escala.horario_missa}\n\n`;
+    text += `${escala.nome_capela} - ${escala.horario_missa}\n\n`;
 
-    escala.coroinhas.forEach((coroinha) => {
-      text += `${coroinha.objetoLiturgico.nome_objeto}: `;
-      text += `${coroinha.coroinha.nome_coroinha}\n`;
+    escala.coroinhas.forEach((coroinha, index) => {
+      const objetoLiturgico = escala.objetosLiturgicos[index];
+      text += `${objetoLiturgico?.nome_objeto}: `;
+      text += `${coroinha?.nome_coroinha}\n`;
     });
 
     return text;
@@ -83,11 +129,22 @@ export const InfoEscalas = () => {
 
   if (!escala) return null;
 
-  const formatarDataBrasileira = (dataString) => {
-    const data = new Date(dataString);
-    const dia = String(data.getUTCDate()).padStart(2, "0");
-    const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
-    const ano = data.getUTCFullYear();
+  const formatarDataBrasileira = (data) => {
+    let dataObj;
+
+    if (data instanceof Date) {
+      dataObj = data;
+    } else if (typeof data?.toDate === "function") {
+      dataObj = data.toDate();
+    } else if (typeof data === "string" || typeof data === "number") {
+      dataObj = new Date(data);
+    } else {
+      return "Data inválida";
+    }
+
+    const dia = String(dataObj.getUTCDate()).padStart(2, "0");
+    const mes = String(dataObj.getUTCMonth() + 1).padStart(2, "0");
+    const ano = dataObj.getUTCFullYear();
     return `${dia}/${mes}/${ano}`;
   };
 
@@ -123,9 +180,9 @@ export const InfoEscalas = () => {
           <TextField
             fullWidth
             disabled
-            label="Nome da Capela"
+            label="Nome da capela"
             name="nome_capela"
-            value={escala.capela.nome_capela}
+            value={escala.nome_capela}
             onChange={handleChange}
           />
         </Grid>
@@ -153,13 +210,14 @@ export const InfoEscalas = () => {
           <TextField
             fullWidth
             disabled
+            label="Data da Escala"
             name="data_escala"
             value={formatarDataBrasileira(escala.data_escala)}
             onChange={handleChange}
           />
         </Grid>
       </Grid>
-      {escala.coroinhas &&
+      {escala.coroinhas.length > 0 ? (
         escala.coroinhas.map((coroinha, index) => (
           <Grid container spacing={2} alignItems="center" mt={3} key={index}>
             <Grid item xs={12} sm={6}>
@@ -167,7 +225,7 @@ export const InfoEscalas = () => {
               <TextField
                 fullWidth
                 disabled
-                value={coroinha.coroinha.nome_coroinha}
+                value={coroinha?.nome_coroinha || ""}
                 placeholder="Nome do Coroinha"
               />
             </Grid>
@@ -176,12 +234,15 @@ export const InfoEscalas = () => {
               <TextField
                 fullWidth
                 disabled
-                value={coroinha.objetoLiturgico.nome_objeto}
+                value={escala.objetosLiturgicos[index]?.nome_objeto || ""}
                 placeholder="Função"
               />
             </Grid>
           </Grid>
-        ))}
+        ))
+      ) : (
+        <p>Nenhum coroinha encontrado.</p>
+      )}
     </Container>
   );
 };

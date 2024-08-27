@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { Delete as DeleteIcon } from "@mui/icons-material";
+import { useRouter } from "next/router";
+import { alertaCadastro } from "../btn_acao/alertas";
+import { db } from "../../firebase/firebase";
 import {
   Button,
   Container,
@@ -14,11 +18,15 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { Delete as DeleteIcon } from "@mui/icons-material";
-import axios from "axios";
-import { baseURL } from "../api/api";
-import { useRouter } from "next/router";
-import { alertaCadastro } from "../btn_acao/alertas";
+import {
+  collection,
+  getDocs,
+  getDoc,
+  query,
+  where,
+  addDoc,
+  doc,
+} from "firebase/firestore";
 
 const CadastrarEscala = () => {
   const [capelas, setCapelas] = useState([]);
@@ -55,10 +63,11 @@ const CadastrarEscala = () => {
   useEffect(() => {
     const fetchCapelas = async () => {
       try {
-        const response = await axios.get(`${baseURL}capelas`);
-        const capelasData = response.data.map((capela) => ({
-          id: capela.id_capela,
-          nome: capela.nome_capela,
+        const capelasRef = collection(db, "capelas");
+        const querySnapshot = await getDocs(capelasRef);
+        const capelasData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          nome: doc.data().nome_capela,
         }));
         setCapelas(capelasData);
       } catch (error) {
@@ -68,8 +77,15 @@ const CadastrarEscala = () => {
 
     const fetchNomesCoroinhas = async () => {
       try {
-        const response = await axios.get(`${baseURL}coroinhas/ativos`);
-        setNomesCoroinhas(response.data);
+        const coroinhasRef = collection(db, "coroinhas");
+        const queryAtivos = query(coroinhasRef, where("status", "==", "ativo"));
+        const querySnapshot = await getDocs(queryAtivos);
+        const coroinhasData = querySnapshot.docs.map((doc) => ({
+          id_coroinha: doc.id,
+          nome_coroinha: doc.data().nome_coroinha,
+        }));
+
+        setNomesCoroinhas(coroinhasData);
       } catch (error) {
         console.error("Erro ao buscar nomes dos coroinhas:", error);
       }
@@ -77,8 +93,13 @@ const CadastrarEscala = () => {
 
     const fetchNomesObjetosLiturgicos = async () => {
       try {
-        const response = await axios.get(`${baseURL}objetos`);
-        setNomesObjetosLiturgicos(response.data);
+        const objetosRef = collection(db, "objetos_liturgicos");
+        const querySnapshot = await getDocs(objetosRef);
+        const objetosData = querySnapshot.docs.map((doc) => ({
+          id_objeto: doc.id,
+          nome_objeto: doc.data().nome_objeto,
+        }));
+        setNomesObjetosLiturgicos(objetosData);
       } catch (error) {
         console.error("Erro ao buscar os objetos litúrgicos:", error);
       }
@@ -87,7 +108,7 @@ const CadastrarEscala = () => {
     fetchCapelas();
     fetchNomesCoroinhas();
     fetchNomesObjetosLiturgicos();
-  }, []);
+  }, [db]);
 
   const navigate = useRouter();
 
@@ -97,10 +118,25 @@ const CadastrarEscala = () => {
 
   const verificarAlturaCoroinhas = async (idCoroinha1, idCoroinha2) => {
     try {
-      const response = await axios.get(`${baseURL}escalas/verificarAltura`, {
-        params: { idCoroinha1, idCoroinha2 },
-      });
-      return response.data;
+      const coroinha1DocRef = doc(db, "coroinhas", idCoroinha1);
+      const coroinha2DocRef = doc(db, "coroinhas", idCoroinha2);
+
+      const coroinha1Doc = await getDoc(coroinha1DocRef);
+      const coroinha2Doc = await getDoc(coroinha2DocRef);
+
+      if (!coroinha1Doc.exists() || !coroinha2Doc.exists()) {
+        throw new Error("Um ou ambos os coroinhas não foram encontrados.");
+      }
+
+      const alturaCoroinha1 = coroinha1Doc.data().altura_coroinha;
+      const alturaCoroinha2 = coroinha2Doc.data().altura_coroinha;
+
+      // Verifica a diferença de altura e retorna uma mensagem se for significativa
+      if (Math.abs(alturaCoroinha1 - alturaCoroinha2) > 0.2) {
+        return "Muita diferença de altura";
+      }
+
+      return null; // Retorna null se não houver problemas
     } catch (error) {
       console.error("Erro ao verificar a altura dos coroinhas:", error);
       throw error;
@@ -109,6 +145,7 @@ const CadastrarEscala = () => {
 
   const handleSaveEscala = async () => {
     setCoroinhasComErro([]);
+
     if (
       coroinhas.length === 0 ||
       coroinhas.some((c) => !c.id_coroinha || !c.id_objeto)
@@ -123,10 +160,14 @@ const CadastrarEscala = () => {
       return;
     }
 
-    const objetosLiturgicosEspecificos = [4, 5, 6];
+    const objetosLiturgicosEspecificos = [
+      "8au3rJzj1QmXX2te1fWw",
+      "av0lZuHiKEV9x2LsvYLS",
+      "QUMn6OBjvLzIGWWoqop8",
+    ];
 
     const coroinhasParaVerificar = coroinhas.filter((coroinha) =>
-      objetosLiturgicosEspecificos.includes(parseInt(coroinha.id_objeto))
+      objetosLiturgicosEspecificos.includes(coroinha.id_objeto)
     );
 
     if (coroinhasParaVerificar.length >= 2) {
@@ -136,8 +177,9 @@ const CadastrarEscala = () => {
             coroinhasParaVerificar[i].id_coroinha,
             coroinhasParaVerificar[j].id_coroinha
           );
-          if (resultado.message.includes("Muita diferença de altura")) {
-            setSnackbarMessage(resultado.message);
+          if (resultado) {
+            // Se houver uma mensagem de erro, mostre-a
+            setSnackbarMessage(resultado);
             setSnackbarOpen(true);
             setCoroinhasComErro([
               coroinhasParaVerificar[i].id_coroinha,
@@ -150,13 +192,19 @@ const CadastrarEscala = () => {
     }
 
     try {
-      const response = await axios.post(`${baseURL}escalas`, {
+      // Crie uma referência ao documento da capela
+      const capelaRef = doc(db, "capelas", escala.id_capela);
+
+      // Mapeie coroinhas e objetos litúrgicos como referências
+      const coroinhasRefs = coroinhas.map(({ id_coroinha, id_objeto }) => ({
+        id_coroinha: doc(db, "coroinhas", id_coroinha),
+        id_objeto: doc(db, "objetos_liturgicos", id_objeto),
+      }));
+
+      await addDoc(collection(db, "escalas"), {
         ...escala,
-        id_capela: parseInt(escala.id_capela),
-        coroinhas: coroinhas.map(({ id_coroinha, id_objeto }) => ({
-          id_coroinha: parseInt(id_coroinha),
-          id_objeto: parseInt(id_objeto),
-        })),
+        id_capela: capelaRef, // Armazena a referência da capela
+        coroinhas: coroinhasRefs, // Armazena as referências dos coroinhas e objetos
       });
 
       alertaCadastro();
@@ -236,10 +284,12 @@ const CadastrarEscala = () => {
                     <MenuItem value="07:00h">07:00h</MenuItem>
                     <MenuItem value="09:00h">09:00h</MenuItem>
                     <MenuItem value="11:00h">11:00h</MenuItem>
+                    <MenuItem value="15:00h">15:00h</MenuItem>
                     <MenuItem value="17:00h">17:00h</MenuItem>
                     <MenuItem value="18:00h">18:00h</MenuItem>
                     <MenuItem value="18:30h">18:30h</MenuItem>
                     <MenuItem value="19:00h">19:00h</MenuItem>
+                    <MenuItem value="19:30h">19:30h</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>

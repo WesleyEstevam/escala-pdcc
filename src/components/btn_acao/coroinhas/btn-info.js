@@ -1,6 +1,5 @@
 import Link from "next/link";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import axios from "axios";
 import { useState, useEffect } from "react";
 import {
   Button,
@@ -11,25 +10,35 @@ import {
   TextField,
 } from "@mui/material";
 import { useRouter } from "next/router";
-import { baseURL } from "../../api/api";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../../firebase/firebase";
 
 export const InfoCoroinha = () => {
-  const [coroinha, setCoroinha] = useState([]);
+  const [coroinha, setCoroinha] = useState(null);
   const router = useRouter();
   const data = router.query.data ? JSON.parse(router.query.data) : null;
 
   useEffect(() => {
-    axios
-      .get(baseURL + "coroinhas/" + data)
-      .then((response) => {
-        setCoroinha(response.data);
-      })
-      .catch((error) => {
-        console.log("Ops, deu erro na listagem do id" + error);
-      });
-  }, []);
+    if (data) {
+      const docRef = doc(db, "coroinhas", data);
+
+      // Busca o documento e atualiza o estado
+      getDoc(docRef)
+        .then((docSnap) => {
+          if (docSnap.exists()) {
+            setCoroinha(docSnap.data());
+          } else {
+            console.log("Nenhum documento encontrado com o ID fornecido");
+          }
+        })
+        .catch((error) => {
+          console.error("Erro ao buscar o documento: ", error);
+        });
+    }
+  }, [data]);
 
   const handleChange = (event) => {
+    // Supondo que você tenha um estado `values` configurado para isso
     setValues({
       ...values,
       [event.target.name]: event.target.value,
@@ -66,7 +75,7 @@ export const InfoCoroinha = () => {
                   name="nome_coroinha"
                   onChange={handleChange}
                   disabled
-                  value={coroinha.nome_coroinha}
+                  value={coroinha ? coroinha.nome_coroinha : ""}
                   variant="outlined"
                 />
               </Grid>
@@ -74,10 +83,10 @@ export const InfoCoroinha = () => {
                 <label>Altura:</label>
                 <TextField
                   fullWidth
-                  name="alura"
+                  name="altura_coroinha" // Corrigido de "alura" para "altura_coroinha"
                   onChange={handleChange}
                   disabled
-                  value={coroinha.altura_coroinha}
+                  value={coroinha ? coroinha.altura_coroinha : ""}
                   variant="outlined"
                 />
               </Grid>
@@ -86,10 +95,10 @@ export const InfoCoroinha = () => {
                 <label>Sexo:</label>
                 <TextField
                   fullWidth
-                  name="sexo"
+                  name="sexo_coroinha" // Corrigido para corresponder ao nome do campo
                   onChange={handleChange}
                   disabled
-                  value={coroinha.sexo_coroinha}
+                  value={coroinha ? coroinha.sexo_coroinha : ""}
                   variant="outlined"
                 />
               </Grid>
@@ -100,9 +109,9 @@ export const InfoCoroinha = () => {
                   name="tipo_coroinha"
                   onChange={handleChange}
                   disabled
-                  value={coroinha.tipo_coroinha}
+                  value={coroinha ? coroinha.tipo_coroinha : ""}
                   variant="outlined"
-                ></TextField>
+                />
               </Grid>
             </Grid>
           </CardContent>

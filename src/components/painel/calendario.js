@@ -1,34 +1,60 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { baseURL } from "../api/api";
+import { db } from "../../firebase/firebase";
+import { collection, getDocs, getDoc } from "firebase/firestore";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 
 export function Calendario() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(`${baseURL}escalas`)
-      .then((response) => {
-        const formattedEvents = response.data.map((escala) => ({
-          title: `${escala.horario_missa} ${escala.capela.nome_capela}-
-          ${escala.tipo_cerimonia}`,
+    const fetchEvents = async () => {
+      try {
+        const escalasRef = collection(db, "escalas");
+        const querySnapshot = await getDocs(escalasRef);
 
-          start: escala.data_escala,
-          extendedProps: {
-            id_escala: escala.id_escala,
-            horario_missa: escala.horario_missa,
-            capela: escala.capela,
-          },
-        }));
+        const escalasData = await Promise.all(
+          querySnapshot.docs.map(async (doc) => {
+            const escalaData = doc.data();
+            const capelaRef = escalaData.id_capela;
 
-        setEvents(formattedEvents);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+            // Convertendo a data_escala para Date, se necessário
+            const dataEscala =
+              escalaData.data_escala instanceof Date
+                ? escalaData.data_escala
+                : new Date(escalaData.data_escala);
+
+            let nomeCapela = "Capela não encontrada";
+
+            // Verificando se a referência da capela é válida
+            if (capelaRef && capelaRef.id) {
+              const capelaDoc = await getDoc(capelaRef);
+              if (capelaDoc.exists()) {
+                nomeCapela = capelaDoc.data().nome_capela;
+              }
+            }
+
+            return {
+              id: doc.id,
+              title: `${escalaData.horario_missa} - ${nomeCapela} - ${escalaData.tipo_cerimonia}`,
+              start: dataEscala.toISOString(), // Converte a data para formato ISO
+              extendedProps: {
+                id_escala: doc.id,
+                horario_missa: escalaData.horario_missa,
+                capela: nomeCapela,
+              },
+            };
+          })
+        );
+
+        setEvents(escalasData);
+      } catch (error) {
+        console.error("Erro ao buscar escalas:", error);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
   return (
